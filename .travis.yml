@@ -1,11 +1,33 @@
 sudo: required
 services:
    - docker
+env:
+  global:
+     - GIT_SHA=$(git rev-parse HEAD)
+# to disable gooogle cloud from sending out prompts
+     - CLOUDSDK_CORE_DISABLE_PROMPTS=1
 before_install:
+# to download and unencrypt the password file for gcloud we encrypted using travis cli travis encrypt-file file -r uname/repo --pro this gave us below thing
+   - openssl aes-256-cbc -K $encrypted_90acb7a552fa_key -iv $encrypted_90acb7a552fa_iv -in fib-appgkedeployment-a9c3707eb593.json.enc -out fib-appgkedeployment-a9c3707eb593.json -d
 # instaling gcloud sdk and updating path
    - curl https://sdk.cloud.google.com | bash > /dev/null;
    - source $HOME/google-cloud-sdk/path.bash.inc
-# upa  
+# installing kubectl and also using the json file that was decrypted by the openssl command
    - gcloud components update kubectl
-   - gcloud auth activate-service-account --key-file service-account.json
-   
+   - gcloud auth activate-service-account --key-file fib-appgkedeployment-a9c3707eb593.json
+# configuring the project and th ekube engine
+   - gcloud config set project fib-appgkedeployment
+   - gcloud config set compute/zone asia-south1-b
+# to get creds of cluster nodes and start deploying
+   - gcloud container clusters get-credentials cluster-1
+   - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+   - docker build -t shehzin/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+   - docker run -e CI=true shehzin/react-test npm test
+
+deploy:
+   provider: script
+   script: bash ./deploy.sh
+   on: 
+     branch: master
