@@ -1,3 +1,4 @@
+#!/bin/bash
 docker build -t shehzin/multi-client:latest -t shehzin/multi-client:$GIT_SHA -f ./client/Dockerfile ./client
 docker build -t shehzin/multi-server:latest -t shehzin/multi-server:$GIT_SHA -f ./server/Dockerfile ./server
 docker build -t shehzin/multi-worker:latest -t shehzin/multi-worker:$GIT_SHA -f ./worker/Dockerfile ./worker
